@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <title>Controller</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/bootstrap-responsive.min.css">
+    <link rel="stylesheet" href="/css/main.css">
+    
+    <script>
+    
+            
+      var canvas_name = 'mainWindow';
+    
+      function init(){
+        
+        console.log("init is called");
+        
+        var socket = io.connect();
+
+        socket.on('connect', function () {
+          socket.headbeatTimeout = 5000;
+        });
+        
+        /*
+        function sendCtrl(ctrl_data) {
+          socket.emit('ctrl_data', ctrl_data);
+        };
+        */
+        
+        TouchSynth(canvas_name,socket);
+        
+      };
+      
+      if(window.addEventListener){
+        window.addEventListener('load',init);
+      }else if(window.attachEvent){
+        window.attachEvent('onload',init);
+      }
+      
+      
+      
+    </script>
+  </head>
+  <body>
+    
+    <canvas id='mainWindow'></canvas>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/angular.min.js"></script>
+    
+    <script type="text/javascript" src="./js/touchsynth.js"></script>
+    <script type="text/javascript" src="./js/draw.js"></script>
+    <script type="text/javascript" src="./js/windowsize.js"></script>
+    <script type="text/javascript" src="./js/scrollevent.js"></script>
+  </body>
+</html>
