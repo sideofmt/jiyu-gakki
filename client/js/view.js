@@ -45,22 +45,36 @@ app.controller('DrumCtrl',function DrumListControler($scope){
     
     var MeasNum = 32;
     var InstNum = 4;
+    this.name = new Array(InstNum);
     this.drums = new Array(InstNum);
     
-    this.drums[i] = {name: 'synbal', score: new Array(MeasNum)};
-    this.drums[i] = {name: 'hi-hat', score: new Array(MeasNum)};
-    this.drums[i] = {name: 'snare', score: new Array(MeasNum)};
-    this.drums[i] = {name: 'kick', score: new Array(MeasNum)};
+    this.name[0] = "synbal";
+    this.name[1] = "hi-hat";
+    this.name[2] = "snare";
+    this.name[3] = "kick";
+    
+    this.drums[0] = new Array(MeasNum);
+    this.drums[1] = new Array(MeasNum);
+    this.drums[2] = new Array(MeasNum);
+    this.drums[3] = new Array(MeasNum);
+    
+    /*
+    this.drums[0] = {name: "synbal", score: new Array(MeasNum)};
+    this.drums[1] = {name: "hi-hat", score: new Array(MeasNum)};
+    this.drums[2] = {name: "snare", score: new Array(MeasNum)};
+    this.drums[3] = {name: "kick", score: new Array(MeasNum)};
+    */
+    
     
     for(var i=0; i<this.drums.length; i++){
-        for(var j=0; j<MeasNum; j++){
-            var temp = this.drums[i].score;
-            temp = false;
+        for(var j=0; j<this.drums[i].length; j++){
+            this.drums[i][j] = false;
         }
     }
     
-    this.click = function(i,j){
-        this.drums[i][1][j] = this.drums[i].get("score")[j] ? false : true;
+    $scope.click = function(i,j){
+        this.drums[i][j] = true;
+        console.log("("+i+","+j+") is " + this.drums[i][j]);
     }
     
     

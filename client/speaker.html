@@ -1,11 +1,23 @@
 <!doctype html>
-<html lang="ja">
+<html lang="en">
   <head>
     <title>Sound play</title>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" href="/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/css/bootstrap-responsive.min.css">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    
     <link rel="stylesheet" href="/css/speaker.css">
+    <!-- Bootstrap -->
+    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
     <script type="text/script">
     
     var date_obj = new Date();
@@ -304,47 +316,57 @@
       </div>
     </div>
     
-    <img src="/img/QRcode-2.gif" align="center" class="QR">
-    <h4 align="center">このQRコードのリンク先に飛んで画面に触れるとこのPCから音がなります</h4>
+    <div class="container">
+      
+      <img src="/img/QRcode-2.gif" align="center" class="QR">
+      <h4 align="center">このQRコードのリンク先に飛んで画面に触れるとこのPCから音がなります</h4>
+      
+      
+      <div class="container">Step <span id=tap>●</span>
     
+      <form name="form1" id="id_form1" action="">
+        <input name="textBox1" id="BPM" type="text" value="" />
+        <input type="button" value="変更" onclick="onBPMClick();" />
+      </form>
+    </div>
     
-    <div class="container">Step <span id=tap>●</span>
-  
-    <form name="form1" id="id_form1" action="">
-      <input name="textBox1" id="BPM" type="text" value="" />
-      <input type="button" value="変更" onclick="onBPMClick();" />
-    </form>
-  </div>
-  
-  <div id="melody" class="container" ng-controller="AppController as myApp">
-    <div ng-repeat="mel in myApp.melodies">
-    
-      <div class="panel panel-default">
-        <div class="panel-heading">
-          <h3 class="panel-title">melody {{$index}}</h3>
-        </div>
-        <div class="panel-body">
-          <div class="btn-group" role="group" aria-label="...">
-            <button type="button" class="btn btn-default" ng-click="myApp.start($index)">start</button>
-            <button type="button" class="btn btn-default" ng-click="myApp.stop($index)">stop</button>
-            <button type="button" class="btn btn-danger" ng-click="myApp.delete($index)">delete</button>
+    <div id="melody" class="container" ng-controller="AppController as myApp">
+      <div ng-repeat="mel in myApp.melodies">
+      
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h3 class="panel-title">melody {{$index}}</h3>
+          </div>
+          <div class="panel-body">
+            <div class="btn-group" role="group" aria-label="...">
+              <button type="button" class="btn btn-default" ng-click="myApp.start($index)">start</button>
+              <button type="button" class="btn btn-default" ng-click="myApp.stop($index)">stop</button>
+              <button type="button" class="btn btn-danger" ng-click="myApp.delete($index)">delete</button>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-  
-  <div id="drum" class="container" ng-controller="DrumCtrl as ctrl">
-  
-  <div class="btn-toolbar" role="toolbar" aria-label="" ng-repeat="i in ctrl.drums">
-    <div class="btn-group" ng-class="{ 'active': i.score }" role="group" aria-label="" ng-repeat="j in i" ng-click="click($parent.$index, $index)"> </div>
+    
+    
+    <div id="drum" class="container" ng-controller="DrumCtrl as ctrl">
+      <ul class="list-group">
+      
+        <li class="list-group-item" ng-repeat="(key, value) in ctrl.drums"> {{ctrl.name[key]}}
+          <div class="btn-group" role="group" aria-label="">
+            <button type="button" class="btn btn-default" ng-class="{ 'active': ctrl.drums[key][i] }" ng-repeat="i in value track by $index" ng-click="click($parent.index, $index)"> </button>
+          </div>
+        </li>
+      
+      </ul>
+    </div>
+    
   </div>
   
     
     
     <script src="/socket.io/socket.io.js"></script>
     <script src="/js/jquery-3.1.1.min.js"></script>
-    <script src="/js/bootstrap.min.js"></script>
     <script src="./js/speaker.js"></script>
 
     <!--<script type="text/javascript" src="./js/XSound/build/xsound.min.js"></script>-->
@@ -352,6 +374,9 @@
     <!-- angular.js -->
     <script src="./js/angular.min.js"></script>
     <script src="./js/view.js"></script>
+    
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="bootstrap/js/bootstrap.min.js"></script>
     
   </body>
 </html>
