@@ -1,14 +1,13 @@
 {
   "name": "synchrosynth",
   "version": "0.0.0",
-  "description": "A chat example to showcase how to use `socket.io` with a static `express` server with `async` for control flow.",
+  "description": "synthesizer",
   "main": "server.js",
   "repository": "",
-  "author": "Mostafa Eweda <mo.eweda@gmail.com>",
+  "author": "yokoyama yu<mtmt.garireo.39440@gmail.com>",
   "dependencies": {
-    "async": "~0.2.8",
     "express": "~3.2.4",
     "socket.io": "~0.9.14",
-    "web-audio-api": "~0.2.2"
+    "web-audio-api": "~0.2.2",
   }
 }

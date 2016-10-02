@@ -5,10 +5,16 @@
 	padding: 0;
 }
 body{
-    background-color: #000000;
+    background-color: #FFFFFF;
 }
 
 canvas {
     border: none;
     /*transform: rotate(90deg);*/
+}
+/*
+@media (max-width: 767px)*/
+body {
+    padding-right: 0px;
+    padding-left: 0px;
 }

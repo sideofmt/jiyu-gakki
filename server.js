@@ -5,9 +5,7 @@
 //
 var http = require('http');
 var path = require('path');
-var fs = require('fs');
 
-var async = require('async');
 var socketio = require('socket.io');
 var express = require('express');
 
@@ -111,12 +109,14 @@ io.sockets.on('connection', function (socket) {
     io.sockets.emit('sendNoteOn',[ID,touchID,key]);
   });
   
+  /*
   socket.on('noteChange',function(msg){
     var ID = socket.id;
     var touchID = msg[0];
     var key = msg[1];
     io.sockets.emit('sendNoteChange',[ID,touchID,key]);
   });
+  */
   
   socket.on('noteOff',function(msg){
     var ID = socket.id;
@@ -124,6 +124,18 @@ io.sockets.on('connection', function (socket) {
     var key = msg[1];
     io.sockets.emit('sendNoteOff',[ID,touchID,key]);
   });
+  
+  socket.on('recordingOn',function(msg){
+    var ID = socket.id;
+    io.sockets.emit('sendRecordingOn',ID);
+  });
+  
+  socket.on('recordingOff',function(msg){
+    var ID = socket.id;
+    io.sockets.emit('sendRecordingOff',ID);
+  });
+  
+  
     
 });
   

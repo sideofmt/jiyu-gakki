@@ -53,8 +53,26 @@
     <script src="/js/angular.min.js"></script>
     
     <script type="text/javascript" src="./js/touchsynth.js"></script>
-    <script type="text/javascript" src="./js/draw.js"></script>
-    <script type="text/javascript" src="./js/windowsize.js"></script>
-    <script type="text/javascript" src="./js/scrollevent.js"></script>
+    <script type="text/javascript">
+      //スクロール禁止用関数
+      
+      var scroll_event = 'onwheel' in document ? 'wheel' : 'onmousewheel' in document ? 'mousewheel' : 'DOMMouseScroll';
+      $(document).on(scroll_event,function(e){e.preventDefault();});
+      document.body.style.overflow = "hidden";
+      
+      $(window).on('touchmove.noScroll', function(e) {
+          e.preventDefault();
+      });
+      
+    	$(function(){
+    		$('a').click(function(){
+    			location.href = $(this).attr('href');
+    			return false;
+    		});
+    	});
+    	
+    	window.scrollTo(10,0);
+    	
+    </script>
   </body>
 </html>

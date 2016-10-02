@@ -1,3 +1,8 @@
+var width_div = 12;
+var height_div = 4;
+var baseKey = 60;
+var canvas_name;
+
 var TouchSynth = function(canvasname,io){
     
     var socket = io;
@@ -8,11 +13,15 @@ var TouchSynth = function(canvasname,io){
     var canvas;
     var windowsize;
     
-    var canvas_name = canvasname;
+    var isRecording = false;
+    
+    canvas_name = canvasname;
+    
+    var touchXY = new Map();
     
     //window.onload = function init()
-    Scroll_Event();
-    windowsize = new WindowSize(canvas_name);
+    //Scroll_Event();
+    windowsize = new WindowSize();
     canvas = new Draw(canvas_name, windowsize);
     
     if(document.addEventListener){
@@ -29,12 +38,24 @@ var TouchSynth = function(canvasname,io){
         socket.emit('noteOn',[id,key]);
     }
         
+    /*
     function sendNoteChange(id,key){
         socket.emit('noteChange',[id,key]);
     }
+    */
         
     function sendNoteOff(id,key){
         socket.emit('noteOff',[id,key]);
+    }
+    
+    function sendRecordingOn(){
+        console.log("sendRecordingOn is called");
+        socket.emit('recordingOn',0);
+    }
+    
+    function sendRecordingOff(){
+        console.log("sendRecordingOff is called");
+        socket.emit('recordingOff',0);
     }
     
     
@@ -68,10 +89,26 @@ var TouchSynth = function(canvasname,io){
 				var x = touch.clientX;
 				var y = touch.clientY;
 				
-				var key = Math.floor(y/windowsize.getHeight() * 24 + 60);
-				var vol = x/windowsize.getWidth() * 1.0;
+				var ykey = parseInt(y/(windowsize.getHeight()/height_div));
+				var xkey = parseInt(x/(windowsize.getWidth()/width_div));
+				
+				var key = baseKey + ykey*width_div + xkey;
+				//var vol = x/windowsize.getWidth() * 1.0;
 				
 				sendNoteOn(id,key);
+				touchMap.set(id,key);
+				touchXY.set(id,[x,y]);
+				
+				if(ykey == height_div-1 && xkey == width_div-1){
+				    console.log("recording button is pushed");
+				    if(isRecording){
+				        sendRecordingOff();
+				        isRecording = false;
+				    }else{
+				        sendRecordingOn();
+				        isRecording = true;
+				    }
+				}
 				
 			};
 		};
@@ -99,17 +136,23 @@ var TouchSynth = function(canvasname,io){
 				var x = touch.clientX;
 				var y = touch.clientY;
 				
-				var key = Math.floor(y/windowsize.getHeight() * 24 + 60);
-				var vol = x/windowsize.getWidth() * 1.0;
+				var ykey = parseInt(y/(windowsize.getHeight()/height_div));
+				var xkey = parseInt(x/(windowsize.getWidth()/width_div));
+				
+				var key = baseKey + ykey*width_div + xkey;
+				//var vol = x/windowsize.getWidth() * 1.0;
 				
 				/*
 				var oscs = touchMap.get(id);
 				oscs[0].frequency.value = MtoF(key);
 				oscs[1].gain.value = vol;
 				*/
-				
-				sendNoteChange(id,key);
-				
+				if(touchMap[id] != key){
+				    sendNoteOff(id,touchMap[id]);
+				    sendNoteOn(id,key);
+				    touchMap[id] = key;
+				}
+				touchXY.set(id,[x,y]);
 			}
 		};
 		function TouchEndEventFunc(e){
@@ -138,10 +181,14 @@ var TouchSynth = function(canvasname,io){
 				oscs[0].stop();
 				touchMap.delete(id);
 				*/
-				var key = Math.floor(y/windowsize.getHeight() * 24 + 60);
+				var ykey = parseInt(y/(windowsize.getHeight()/height_div));
+				var xkey = parseInt(x/(windowsize.getWidth()/width_div));
+				
+				var key = baseKey + ykey*width_div + xkey;
 				
 				sendNoteOff(id,key);
-				
+				touchMap.delete(id);
+				touchXY.delete(id);
 			}
 		};
 
@@ -166,22 +213,39 @@ var TouchSynth = function(canvasname,io){
         var mousepress = false;
         var osc;
         var gain;
+        var prekey;
         
         function MousedownEventFunc(e){
             var x = e.clientX;
 	        var y = e.clientY;
 	        
-	        var key = Math.floor(y/windowsize.getHeight() * 24 + 60);
-			var vol = x/windowsize.getWidth() * 1.0;
+	        var ykey = parseInt(y/(windowsize.getHeight()/height_div));
+			var xkey = parseInt(x/(windowsize.getWidth()/width_div));
+				
+			var key = baseKey + ykey*width_div + xkey;
+			//var vol = x/windowsize.getWidth() * 1.0;
 			
 			//oscillator.noteOn(id,key,vol);
 	        
 	        mousepress = true;
 	        
 	        
-	        
+	        prekey = key;
 	        sendNoteOn(id,key);
+	        touchXY.set(id,[x,y]);
 	        
+	        
+	        if(ykey == height_div-1 && xkey == width_div-1){
+	            console.log("recording button is pushed");
+				    if(isRecording){
+				        sendRecordingOff();
+				        isRecording = false;
+				    }else{
+				        sendRecordingOn();
+				        isRecording = true;
+				    }
+			}
+			
         };
         
         function MousemoveEventFunc(e){
@@ -189,10 +253,18 @@ var TouchSynth = function(canvasname,io){
                 var x = e.clientX;
     	        var y = e.clientY;
     	        
-    	        var key = Math.floor(y/windowsize.getHeight() * 24 + 60);
-    			var vol = x/windowsize.getWidth() * 1.0;
+    	        var ykey = parseInt(y/(windowsize.getHeight()/height_div));
+				var xkey = parseInt(x/(windowsize.getWidth()/width_div));
+				
+				var key = baseKey + ykey*width_div + xkey;
+    			//var vol = x/windowsize.getWidth() * 1.0;
     			
-    			sendNoteChange(id,key);
+    			if(prekey != key){
+				    sendNoteOff(id,prekey);
+				    sendNoteOn(id,key);
+				    prekey = key;
+				}
+				touchXY.set(id,[x,y]);
             }
         };
         function MouseupEventFunc(e){
@@ -200,8 +272,11 @@ var TouchSynth = function(canvasname,io){
                 var x = e.clientX;
     	        var y = e.clientY;
     	        
-    	        var key = Math.floor(y/windowsize.getHeight() * 24 + 60);
-    			var vol = x/windowsize.getWidth() * 1.0;
+    	        var ykey = parseInt(y/(windowsize.getHeight()/height_div));
+				var xkey = parseInt(x/(windowsize.getWidth()/width_div));
+				
+				var key = baseKey + ykey*width_div + xkey;
+    			//var vol = x/windowsize.getWidth() * 1.0;
     	        
     	        //oscillator.noteOff(id);
 	            mousepress = false;
@@ -209,6 +284,7 @@ var TouchSynth = function(canvasname,io){
 	            console.log("id:"+id+" key:"+key);
 	            
 	            sendNoteOff(id,key);
+	            touchXY.delete(id);
             }
         };
         
@@ -344,6 +420,164 @@ var TouchSynth = function(canvasname,io){
         \ |	220
         ] }	221
         */
+    };
+    
+    
+    
+    function Draw(canvas_name,swindowsize){
+    
+        var ctx;
+        
+        var canvas = document.getElementById(canvas_name);
+            if (canvas.getContext){
+                ctx = canvas.getContext('2d');
+                // 表示間隔とフレームごとに実行する関数を指定
+                setInterval(draw, 33);
+            }
+        var windowsize = swindowsize;
+        
+        var press;
+        
+        function draw(){
+            
+            var width = windowsize.getWidth();
+            var height = windowsize.getHeight();
+            
+            update(width,height);
+            
+            
+            
+            // background
+            ctx.globalCompositeOperation = "source-over";
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, 0, width, height);
+            ctx.globalCompositeOperation = "lighter";
+            
+            var rectx = width/width_div;
+            var recty = height/height_div;
+            
+            //ctx.fillStyle = "#FFFFFF";
+            for(var x=0; x<width_div; x++){
+                for(var y=0; y<height_div; y++){
+                    if(press[x][y]){
+                        ctx.fillStyle = "#FFFFFF";
+                        ctx.fillRect(x*rectx, y*recty, rectx, recty);
+                    }else{
+                        ctx.strokeStyle = "rgb(255, 255, 255)";;
+                        ctx.strokeRect(x*rectx, y*recty, rectx, recty);
+                    }
+                    
+                    if(x == width_div-1 && y == height_div-1){
+                        if(isRecording)ctx.fillStyle = "#FF0000";
+                        else ctx.fillStyle = "#660000";
+                        ctx.fillRect(x*rectx, y*recty, rectx, recty);
+                    }
+                    
+                    
+                }
+            }
+            
+            
+            
+            
+            // text
+            ctx.fillStyle = '#FFFFFF';
+            ctx.textAlign = "center";
+            ctx.font = "normal normal 30px sans-serif";
+            ctx.fillText("Touch or Mouse Click",width/2,height/2);
+            
+            //ctx.fill();
+        };
+        
+        function update(width,height){
+            
+            press = new Array(width_div);
+            for(var i=0; i<press.length; i++){
+                press[i] = new Array();
+                for(var j=0; j<height_div; j++){
+                    press[i].push(false);
+                }
+            }
+            
+            for(var [key,value] of touchXY){
+                var x = value[0];
+                var y = value[1];
+                var xnum = parseInt(x/(width/width_div));
+                var ynum = parseInt(y/(height/height_div));
+                try{
+                    press[xnum][ynum] = true;
+                    
+                }catch(e){
+                    console.log(e);
+                }
+                
+                
+                
+            }
+            
+            
+            
+            
+        }
+        
+        
+    };
+
+
+    
+    
+};
+
+
+/*
+var Scroll_Event = function(){
+        
+    //スクロール禁止用関数
+    var scroll_event = 'onwheel' in document ? 'wheel' : 'onmousewheel' in document ? 'mousewheel' : 'DOMMouseScroll';
+    $(document).on(scroll_event,function(e){e.preventDefault();});
+    document.body.style.overflow = "hidden";
+    
+    $(window).on('touchmove.noScroll', function(e) {
+        e.preventDefault();
+    });
+    
+	$(function(){
+		$('a').click(function(){
+			location.href = $(this).attr('href');
+			return false;
+		});
+	});
+	
+};
+*/
+
+
+var WindowSize = function(){
+    
+    var width = 0;
+    var height = 0;
+    
+    function resize(){
+        width = document.documentElement.clientWidth;
+        height = document.documentElement.clientHeight;
+    
+        document.getElementById(canvas_name).width = document.documentElement.clientWidth;
+        document.getElementById(canvas_name).height = document.documentElement.clientHeight;
+        console.info("resize is called");
+    }
+    
+    resize();
+    
+    window.onresize = resize;
+    
+    
+    
+    WindowSize.prototype.getWidth = function(){
+        return width;
+    };
+    
+    WindowSize.prototype.getHeight = function(){
+        return height;
     };
     
 };
