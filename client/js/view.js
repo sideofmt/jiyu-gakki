@@ -21,7 +21,7 @@ angular.module('App', [])
         this.melodies.splice(index,1);
         
     };
-})
+});
 
 
 
@@ -137,6 +137,11 @@ function noteOff(id,key){
 function scaleChange(base,scalename){
   socket.emit('scale',[base,scalename]);
   console.log("sent scale change : "+base+" "+scalename + " scale");
+}
+
+function bpmChange(sbpm,score){
+  socket.emit('bpm',[sbpm,score]);
+  console.log("sent bpm change : bpm"+sbpm+" "+score+"音符まで");
 }
 
 
@@ -271,9 +276,9 @@ function Draw(canvas_name){
 
 
 
-var select = document.getElementById("scale");
+var selectnote = document.getElementById("scale");
 
-select.onchange = function (){
+selectnote.onchange = function (){
   
   var base = document.getElementById("base");
   var scalename = document.getElementById("scalename");
@@ -289,9 +294,24 @@ select.onchange = function (){
   //if (index != 0 && index2 != 0){
     scaleChange(base.value,scalename.value);
   //}
-}
+};
 
+var selectbpm = document.getElementById("rythm");
 
+selectbpm.onchange = function (){
+  
+  var sbpm = document.getElementById("bpm");
+  var score = document.getElementById("score");
+  
+  var index = sbpm.selectedIndex;
+  var index2 = score.selectedIndex;
+  if(sbpm.value == "none"){
+    score.disabled = true;
+  }else{
+    score.disabled = false;
+  }
+  scaleChange(sbpm.value,score.value);
+};
 
 
 
@@ -307,6 +327,25 @@ function init(){
   load_Inst();
   var socket = io.connect();
   var ctrls = new Map();
+  
+  
+  var bpmMin = 60;
+  var bpmMax = 210;
+  
+  for(var i=bpmMin; i<=bpmMax; i++){
+    
+    // <select id="select"> を取得
+    var select = document.getElementById('bpm');
+    // <option> 要素を宣言
+    var option = document.createElement('option');
+     
+    option.setAttribute('value', i);
+    option.innerHTML = i;
+     
+    // 上記で設定した <option value=""></option> を、
+    // <select> 内に追加する
+    select.appendChild(option);
+  }
   
   socket.on('connect', function(msg){
     socket.headbeatTimeout = 5000;
@@ -464,6 +503,49 @@ function init(){
     }
     
   });
+  
+  
+  socket.on('sendBpm',function(msg){
+    var nbpm = msg[0];
+    var nscore = msg[1];
+    
+    var bpm = document.getElementById("bpm");
+    var score = document.getElementById("score");
+    
+    switch(nbpm){
+      case 'none':
+        bpm.selectedIndex = 0;
+        score.disabled = true;
+        break;
+      default:
+        bpm.selectedIndex = nbpm;
+        score.disabled = false;
+        break;
+    }
+    
+    switch(nscore){
+      case 'whole':
+        score.selectedIndex = 0;
+        break;
+      case 'half':
+        score.selectedIndex = 1;
+        break;
+      case 'quarter':
+        score.selectedIndex = 2;
+        break;
+      case 'eighth':
+        score.selectedIndex = 3;
+        break;
+      case 'Sixteenth':
+        score.selectedIndex = 4;
+        break;
+      default:
+        break;
+    }
+    
+  });
+  
+  
   
   socket.on('instrument_change',function(msg){
     var id = msg[0];

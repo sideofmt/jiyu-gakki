@@ -37,6 +37,7 @@ router.use(express.static(path.resolve(__dirname, 'client')));
 var sockets = [];
 
 var nscale = ["none","none"];
+var nbpm = ["none","none"];
 
 var speakers = new Array(); // socket
 
@@ -260,6 +261,12 @@ io.sockets.on('connection', function (socket) {
     nscale = [msg[0],msg[1]];
     broadcastPlayer('sendScale',msg);
     broadcastSpeaker('sendScale',msg);
+  });
+  
+  socket.on('bpm',function(msg){
+    console.log("recieve changed : bpm"+msg[0]+" "+msg[1]+"音符");
+    nbpm = [msg[0],msg[1]];
+    broadcastSpeaker('sendBpm',msg);
   });
   
   socket.on('Rec',function(msg){
