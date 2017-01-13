@@ -4,13 +4,26 @@
     <title>Controller</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/css/bootstrap-responsive.min.css">
+    <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="/css/main.css">
+  </head>
+  <body>
     
-    <script>
+    <canvas id='mainWindow'></canvas>
     
-            
+    
+    
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/jquery-3.1.1.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/angular.min.js"></script>
+    
+    <script type="text/javascript" src="./js/controller.js"></script>
+    <script type="text/javascript">
+    
+    
+    
       var canvas_name = 'mainWindow';
     
       function init(){
@@ -29,7 +42,7 @@
         };
         */
         
-        TouchSynth(canvas_name,socket);
+        var touch = new TouchSynth(canvas_name,socket);
         
       };
       
@@ -38,22 +51,11 @@
       }else if(window.attachEvent){
         window.attachEvent('onload',init);
       }
-      
-      
-      
-    </script>
-  </head>
-  <body>
     
-    <canvas id='mainWindow'></canvas>
     
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/jquery.min.js"></script>
-    <script src="/js/bootstrap.min.js"></script>
-    <script src="/js/angular.min.js"></script>
     
-    <script type="text/javascript" src="./js/touchsynth.js"></script>
-    <script type="text/javascript">
+    
+    
       //スクロール禁止用関数
       
       var scroll_event = 'onwheel' in document ? 'wheel' : 'onmousewheel' in document ? 'mousewheel' : 'DOMMouseScroll';
@@ -71,7 +73,7 @@
     		});
     	});
     	
-    	window.scrollTo(10,0);
+    	//window.scrollTo(10,0);
     	
     </script>
   </body>
