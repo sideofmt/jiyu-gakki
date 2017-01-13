@@ -1,297 +1,614 @@
-    var date_obj = new Date();
-    
-    var BPM = 140;
-    var interval = 7500.0/BPM; // 32分の間隔
-    var measureStart = date_obj.getTime();
-    
-    var melodies = new Map();
-    var records = new Map();
-    var melodiesOsc = new Map();
-    
-    var melodynum = 0;
-    var isPlayList = new Array();
-    
-    var setIntervalId = setInterval(loop,interval);
-    // clearInterval(setIntervalId);
-    
-    var count = 0;
-    function loop(){
-      if(count%2==1){
-        for(var [key,value] of records){
-          value.push(new Array());
-        }
-      }else{
-        for(var k in isPlayList){
-          var mel = melodies.get(k);
-          console.log(mel);
-          var note = mel[count/mel.length];
-            if(note[1]){
-              noteOn(k,note[0]);
-            }else{
-              noteOff(k,note[0]);
-            }
-          
-        }
-        
-      }
-      
-      if(count%7==0){
-        document.getElementById("tap").style.color = "red";
-      }else{
-        document.getElementById("tap").style.color = "black";
-      }
-      if(count%31==0)measureStart = date_obj.getTime();
-      
-      count++;
-    }
-    
-    
-    var Recording = function(){
-      var melody;
-      
-      //Recording.prototype.recordingStart = function(){
-        
-        var now = date_obj.getTime() - measureStart;
-        
-        var mcount;
-        var temp = interval*2;
-        for(mcount=0; now>0; mcount++){
-          now -= temp;
-        }
-        
-        melody = new Array(mcount);
-      //}
-      Recording.prototype.getMelody = function(){
-        return melody;
-      }
-      Recording.prototype.push = function(value){
-        melody.push(value);
-      }
-      
-    }
-    
-    
-    
-    
-    
-    
-      try{
-          window.AudioContext = window.AudioContext || window.webkitAudioContext;
-          // Create the instance of AudioContext
-          context = new AudioContext();
-          //master = context.createGain();
-          //master.connect(context.destination);
-          console.info("AudioContext is created");
-          
-      }
-      catch(e) {
-          alert('Web Audio API is not supported in this browser');
-      }
-      
-      var table = new Array();
-      for(var i=0; i<128; i++){
-        table.push(440.0 * Math.pow(2, (i-70)/12));
-      }
-        
-      var MtoF = function(noteNumber){
-        return table[noteNumber];
-      };
-      
-    var master = context.createGain();
-    master.connect(context.destination);
 
-    
-    var oscs = new Map();
-    
-    
-      function init(){
-        var socket = io.connect();
-        
-        //var melody_list = [];
-        var ctrls = new Map();
-        
-        
-        socket.on('connect', function(msg){
-          socket.headbeatTimeout = 5000;
-        });
-        
-        socket.on('greeting', function(data){
-          console.log(data);
-          socket.emit('greeting', "this is speaker");
-        });
-        
-        socket.on('add_ctrl',function(id){
-          console.log("add controller ID:"+id);
-          var map = new Map();
-          ctrls.set(id, map);
-        });
-        
-        socket.on('cut_ctrl',function(id){
-          console.log("cut controller ID:"+id);
-          ctrls.delete(id);
-          if(records.has(id)){
-            melodies.push(records[id].getMelody());
-            records.delete(id);
-          }
-        });
-        
-        socket.on('sendRecordingOn',function(id){
-          console.log("recording start  id : "+id);
-          records.set(id, new Recording());
-        });
-        
-        socket.on('sendRecordingOff',function(id){
-          console.log("recording stop  id : "+id);
-          //console.log(records);
-          if(records.has(id)){
-            melodynum++;
-            console.log(records.get(id));
-            melodies.set(melodynum, records.get(id).getMelody());
-            add(melodynum);
-            records.delete(id);
-          }
-        })
-        
-        
-        socket.on('sendNoteOn',function(msg){
-          console.log("noteOn catch ID:" +msg[0] + " touchID:"+msg[1] + " key:"+msg[2]);
-          
-          var socketid = msg[0];
-          var touchid = msg[1];
-          var key = msg[2];
-          
-          
-          
-          var gain = context.createGain();
-			    var osc = context.createOscillator();
-    			osc.connect(gain);
-    			gain.connect(master);
-    			osc.type = 'square';
-          osc.frequency.value = MtoF(key);
-          gain.gain.value = 0.5;
-    			osc.start();
-    			
+var melodies = new Map();
 
-    		  oscs.set(socketid+touchid,osc);
-    			console.log(oscs);
-    			
-    			
-    			try{
-    			  if(records.has(socketid)){
-    			    var arr = records[socketid];
-    			    arr.push([key,true])
-    			  }
-    			}catch(e){
-    			  console.log();
-    			}
-    			
-    			
-        });
+/********************
+    viewer
+********************/
+
+angular.module('App', [])
+.controller('AppController', function MelodyListController($scope){
+    //ここでModelとのやりとりなど。
+
+    this.melodies = melodies;
+
+    this.start = function(index) {
         
-        /*
-        socket.on('sendNoteChange',function(msg){
-          
-          console.log("noteChange catch ID:" + msg[0] + " touchID:"+msg[1] + " key:"+msg[2]);
-          
-          var socketid = msg[0];
-          var touchid = msg[1];
-          var key = msg[2];
+    };
+    this.stop = function(index) {
+      
+    };
+    this.delete = function(index) {
+        this.melodies.splice(index,1);
+        
+    };
+});
+
+
+
+
+if(window.addEventListener){
+    window.addEventListener('load',init);
+}else if(window.attachEvent){
+    window.attachEvent('onload',init);
+}
+
+
+
+
+
+
+
+
+
+/*********************
+    logic
+*********************/
+
+
+
+
+try{
+  window.AudioContext = window.AudioContext || window.webkitAudioContext;
+  // Create the instance of AudioContext
+  context = new AudioContext();
+  //master = context.createGain();
+  //master.connect(context.destination);
+  console.info("AudioContext is created");
   
-          
-          console.log(oscs);
-          oscs.get(socketid+touchid).frequency.value = MtoF(key);
-          
-        });
-        */
-        
-        socket.on('sendNoteOff',function(msg){
-          
-          console.log("noteOff catch ID:" +msg[0] + " touchID:"+msg[1] + " key:"+msg[2]);
-          
-          var socketid = msg[0];
-          var touchid = msg[1];
-          var key = msg[2];
-          
-				  oscs.get(socketid+touchid).stop();
-				  oscs.delete(socketid+touchid);
-				  
-				  try{
-    			  if(records.has(socketid)){
-    			    var arr = records[socketid];
-    			    arr.push([key,false])
-    			  }
-    			}catch(e){
-    			  console.log();
-    			}
-          
-        });
-        
-        
-        
-      };
-      
-      if(window.addEventListener){
-        window.addEventListener('load',init);
-      }else if(window.attachEvent){
-        window.attachEvent('onload',init);
-      }
-      
-      function noteOn(id,key){
-        var gain = context.createGain();
-			    var osc = context.createOscillator();
-    			osc.connect(gain);
-    			gain.connect(master);
-    			osc.type = 'square';
-          osc.frequency.value = MtoF(key);
-          gain.gain.value = 0.5;
-    			osc.start();
-    			melodiesOsc.set([id,key],osc);
-      }
-      function noteOff(id,key){
-        melodiesOsc.get([id,key]).stop();
-				oscs.delete([id,key]);
-      }
-      
-      
-      function onBPMClick(){
-        try{
-          BPM = parseInt(document.forms.id_form1.BPM.value);
-          interval = 7500.0/BPM
-          console.log("BPM is "+BPM);
-        }catch(e){
-          console.log(e);
-        }
-      }
-      
-      
-    function add(num)
-    {
-        var div_element = document.createElement("div");
-        div_element.innerHTML = '<div class="panel panel-default" id="melody'+num+'"><div class="panel-heading"><h3 class="panel-title">melody'+num+'</h3></div><div class="panel-body"><div class="btn-group" role="group" aria-label="..."><button type="button" class="btn btn-default" onclick="melodyStart('+num+');">start</button><button type="button" class="btn btn-default" onclick="melodyStop('+melodynum+');">stop</button><button type="button" class="btn btn-danger" onclick="melodyDelete('+num+');">delete</button></div><input type="text" name="begin" size="5" value=""><input type="text" name="end" size="5" value=""><button type="button" class="btn btn-default" onclick="beginEndSet('+num+');">set</button></div></div>';
-        var parent_object = document.getElementById("melody");
-        parent_object.appendChild(div_element);
-    }
+}
+catch(e) {
+  alert('Web Audio API is not supported in this browser');
+}
 
-      
-    function melodyStart(num){
-      isPlayList.push(num);
-    } 
+var master = context.createGain();
+var panNode = context.createStereoPanner();
+master.connect(context.destination);
+
+
+var instruments = new Map();
+
+function load_Inst(){
+  Soundfont.instrument(context, './soundfont/acoustic_grand_piano-ogg.js').then(function (inst) {
+    instruments.set('piano',inst);
+  });
+  Soundfont.instrument(context, './soundfont/synth_bass_1-ogg.js').then(function (inst) {
+    instruments.set('bass',inst);
+  });
+  Soundfont.instrument(context, './soundfont/flute-ogg.js').then(function (inst) {
+    instruments.set('flute',inst);
+  });
+  Soundfont.instrument(context, './soundfont/pad_3_polysynth-ogg.js').then(function (inst) {
+    instruments.set('synth',inst);
+  });
+  Soundfont.instrument(context, './soundfont/string_ensemble_1-ogg.js').then(function (inst) {
+    instruments.set('string',inst);
+  });
+  //Soundfont.instrument(context, './soundfont/synth_drum-ogg.js').then(function (inst) {
+  //  instruments.set('drum',inst);
+  //});
+  instruments.set('drum',new Drum(context));
+}
+
+
+
+
+
+
+var socket = io.connect();
+
+
+
+function noteOn(id,key){
+  var player = players.get(id);
+  var instrument_name = player.getInst();
+  var instrument = instruments.get(instrument_name);
+  //var instrument = instruments.get("piano");
+  try{
+    player.pushNote(key);
+    if(instrument_name=="drum"){
+      instrument.play(key);
+    }else{
+      var node = instrument.play(key,context.currentTime,{duration:3,release:2});
+      player.setNode(key,node);
+    }
+    console.log("noteOn :"+key);
+  }catch(e){
+    console.error(e);
+  }
+}
+
+function noteOff(id,key){
+  var player = players.get(id);
+  var instrument_name = player.getInst();
+  //var instrument = instruments.get(player.getInst());
+  try{
+    player.deleteNote(key);
+    if(instrument_name!="drum"){
+      var node = player.getNode(key);
+      node.stop(context.currentTime);
+    }
+    //instrument.stop(context.currentTime,[key]);
+    console.log("noteOff :"+key);
+  }catch(e){
+    console.error(e);
+  }
+}
+
+function scaleChange(base,scalename){
+  socket.emit('scale',[base,scalename]);
+  console.log("sent scale change : "+base+" "+scalename + " scale");
+}
+
+function bpmChange(sbpm,score){
+  socket.emit('bpm',[sbpm,score]);
+  console.log("sent bpm change : bpm"+sbpm+" "+score+"音符まで");
+}
+
+
+
+
+
+var indexList = new Array(); // player's index
+var img_inst = new Array(8);
+var img_note;
+
+function loadImg(){
+  img_inst[0] = new Image();
+  img_inst[0].src = "img/gakki/keyboard1_red.png";
+  img_inst[1] = new Image();
+  img_inst[1].src = "img/gakki/keyboard2_blue.png";
+  img_inst[2] = new Image();
+  img_inst[2].src = "img/gakki/keyboard3_yellow.png";
+  img_inst[3] = new Image();
+  img_inst[3].src = "img/gakki/keyboard4_green.png";
+  img_inst[4] = new Image();
+  img_inst[4].src = "img/gakki/keyboard5_orange.png";
+  img_inst[5] = new Image();
+  img_inst[5].src = "img/gakki/keyboard6_purple.png";
+  img_inst[6] = new Image();
+  img_inst[6].src = "img/gakki/keyboard7_black.png";
+  img_inst[7] = new Image();
+  img_inst[7].src = "img/gakki/keyboard8_white.png";
+  img_note = new Image();
+  img_note.src = "img/onpu/11_8bu_onpu.png";
+}
+
+
+
+
+
+
+var players = new Map(); // [id,new Player()];
+var noteOnList = new Array();
+var p_noteOnList = new Array();
+
+
+
+
+
+
+
+function Draw(canvas_name){
+
+    var ctx;
     
-    function melodyStop(num){
-      isPlayList.splice(isPlayList.indexOf(num),1);
+    var windowIndex; // 画面番号
+    var settingButton; // setting画面表示フラグ
+    
+    var width = 1000;
+    var height = 400;
+    
+    document.getElementById(canvas_name).width = width;
+    document.getElementById(canvas_name).height = height;
+    
+    function resize(){
+        width = document.documentElement.clientWidth;
+        height = document.documentElement.clientHeight;
+    
+        document.getElementById(canvas_name).width = document.documentElement.clientWidth -100;
+        document.getElementById(canvas_name).height = document.documentElement.clientHeight -100;
+        console.info("resize is called");
     }
     
-    function melodyDelete(num){
-      melodyStop(num);
-      var element = document.getElementById('melody'+num);
-      element.parentNode.removeChild(element);
+    resize();
+    
+    window.onresize = resize;
+    
+    
+    var canvas = document.getElementById(canvas_name);
+    if (canvas.getContext){
+      ctx = canvas.getContext('2d');
+      windowIndex = 1;
+      settingButton = false;
+      loadImg();
+      // 表示間隔とフレームごとに実行する関数を指定
+      setInterval(draw, 33);
     }
       
-    function beginEndSet(num){
+    function draw(){
+      
+      
+        // background
+        ctx.globalCompositeOperation = "source-over";
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, width, height);
+        //ctx.globalCompositeOperation = "lighter";
+      
+        for(var [key,player] of players){
+            
+            //console.log("player:"+player);
+            //console.log("player Index:"+player.getIndex());
+            
+            try{
+              var index = player.getIndex();
+              var x = 10+index*210;
+              var y = 10;
+              
+              while(x+200>width){
+                x -= width;
+                y += 220;
+              }
+              
+              // 楽器
+              ctx.drawImage(img_inst[player.getIndex()],x,y);
+              ctx.textAlign = "left";
+              ctx.textBaseline = "top";
+              ctx.font = "normal normal 30px MSゴシック";
+              ctx.fillStyle = "rgb(0,0,0)";
+              ctx.fillText(index,100+x,y);
+              
+              var notes = player.getNote();
+              if(notes.length>0){
+                // 音符
+                ctx.drawImage(img_note,140+x,y);
+              }
+              
+            }catch(e){
+              console.error(e);
+            }
+        }
+      
+      
       
     }
     
-    function setSchedule(){
+}
+
+
+
+var selectnote = document.getElementById("scale");
+
+selectnote.onchange = function (){
+  
+  var base = document.getElementById("base");
+  var scalename = document.getElementById("scalename");
+  
+  var index = base.selectedIndex;
+  var index2 = scalename.selectedIndex;
+  if(base.value == "none"){
+    scalename.disabled = true;
+  }else{
+    scalename.disabled = false;
+  }
+  
+  //if (index != 0 && index2 != 0){
+    scaleChange(base.value,scalename.value);
+  //}
+};
+
+var selectbpm = document.getElementById("rythm");
+
+selectbpm.onchange = function (){
+  
+  var sbpm = document.getElementById("bpm");
+  var score = document.getElementById("score");
+  
+  var index = sbpm.selectedIndex;
+  var index2 = score.selectedIndex;
+  if(sbpm.value == "none"){
+    score.disabled = true;
+  }else{
+    score.disabled = false;
+  }
+  scaleChange(sbpm.value,score.value);
+};
+
+
+
+
+
+
+
+
+
+
+function init(){
+  
+  load_Inst();
+  var socket = io.connect();
+  var ctrls = new Map();
+  
+  
+  var bpmMin = 60;
+  var bpmMax = 210;
+  
+  for(var i=bpmMin; i<=bpmMax; i++){
+    
+    // <select id="select"> を取得
+    var select = document.getElementById('bpm');
+    // <option> 要素を宣言
+    var option = document.createElement('option');
+     
+    option.setAttribute('value', i);
+    option.innerHTML = i;
+     
+    // 上記で設定した <option value=""></option> を、
+    // <select> 内に追加する
+    select.appendChild(option);
+  }
+  
+  socket.on('connect', function(msg){
+    socket.headbeatTimeout = 5000;
+  });
+  
+  socket.on('greeting', function(data){
+    console.log("from server : "+data);
+    socket.emit('greeting', "speaker");
+  });
+  
+  socket.on('update_data',function(ids){
+    
+    var idlist = new Array(); 
+    
+    for(var i=0; i<ids.length; i++){
+      var id = ids[i][0];
+      var index = ids[i][1];
+      var inst = ids[i][2];
+      console.log("[id:"+id+",index:"+index+",inst:"+inst+"]");
       
+      var p;
+      
+      idlist.push(id);
+      
+      if(players.get(id) != undefined){
+        console.log("update player:"+id);
+        p = players.get(id);
+        
+        p.setIndex(index);
+        p.setInst(inst);
+        
+      }else{
+        console.log("add player:"+id);
+        p = new Player(index,inst);
+        players.set(id,p);
+      }
     }
       
+    players.forEach(function(player,id){
+      if(!idlist.includes(id)){
+        players.delete(id);
+      }
+    });
+  });
+  
+  /*
+  socket.on('disconnected',function(id){
+    console.log("disconnected player ID:"+id);
+    var player = players.get(id);
+    player.remove();
+    players.delete(id);
+  });
+  */
+
+  
+  
+  
+  // noteOn noteOff
+  
+  socket.on('noteOn',function(msg){
+    console.log("noteOn ID:" +msg[0] + " key:"+msg[1]);
+    
+    var socketid = msg[0];
+    var key = msg[1];
+    
+    var player = players.get(socketid);
+    //player.setNote(key);
+    noteOn(socketid, key);
+  		
+  });
+  
+  socket.on('noteOff',function(msg){
+    console.log("noteOff ID:" +msg[0] + " key:"+msg[1]);
+    
+    var socketid= msg[0];
+    var key = msg[1];
+    
+    noteOff(socketid,key);
+  });
+  
+  
+  socket.on('sendScale',function(msg){
+    var nbase = msg[0];
+    var nname = msg[1];
+    
+    var base = document.getElementById("base");
+    var scalename = document.getElementById("scalename");
+    
+    switch(nbase){
+      case 'none':
+        base.selectedIndex = 0;
+        scalename.disabled = true;
+        break;
+      case 'C':
+        base.selectedIndex = 1;
+        scalename.disabled = false;
+        break;
+      case 'C#':
+        base.selectedIndex = 2;
+        scalename.disabled = false;
+        break;
+      case 'D':
+        base.selectedIndex = 3;
+        scalename.disabled = false;
+        break;
+      case 'D#':
+        base.selectedIndex = 4;
+        scalename.disabled = false;
+        break;
+      case 'E':
+        base.selectedIndex = 5;
+        scalename.disabled = false;
+        break;
+      case 'F':
+        base.selectedIndex = 6;
+        scalename.disabled = false;
+        break;
+      case 'F#':
+        base.selectedIndex = 7;
+        scalename.disabled = false;
+        break;
+      case 'G':
+        base.selectedIndex = 8;
+        scalename.disabled = false;
+        break;
+      case 'G#':
+        base.selectedIndex = 9;
+        scalename.disabled = false;
+        break;
+      case 'A':
+        base.selectedIndex = 10;
+        scalename.disabled = false;
+        break;
+      case 'A#':
+        base.selectedIndex = 11;
+        scalename.disabled = false;
+        break;
+      case 'B':
+        base.selectedIndex = 12;
+        scalename.disabled = false;
+        break;
+      default:
+        break;
+    }
+    
+    switch(nname){
+      case 'major':
+        scalename.selectedIndex = 0;
+        break;
+      case 'minor':
+        scalename.selectedIndex = 1;
+        break;
+      default:
+        break;
+    }
+    
+  });
+  
+  
+  socket.on('sendBpm',function(msg){
+    var nbpm = msg[0];
+    var nscore = msg[1];
+    
+    var bpm = document.getElementById("bpm");
+    var score = document.getElementById("score");
+    
+    switch(nbpm){
+      case 'none':
+        bpm.selectedIndex = 0;
+        score.disabled = true;
+        break;
+      default:
+        bpm.selectedIndex = nbpm;
+        score.disabled = false;
+        break;
+    }
+    
+    switch(nscore){
+      case 'whole':
+        score.selectedIndex = 0;
+        break;
+      case 'half':
+        score.selectedIndex = 1;
+        break;
+      case 'quarter':
+        score.selectedIndex = 2;
+        break;
+      case 'eighth':
+        score.selectedIndex = 3;
+        break;
+      case 'Sixteenth':
+        score.selectedIndex = 4;
+        break;
+      default:
+        break;
+    }
+    
+  });
+  
+  
+  
+  socket.on('instrument_change',function(msg){
+    var id = msg[0];
+    var inst = msg[1];
+    
+    var player = players.get(id);
+    player.setInst(inst);
+    
+  });
+  
+}
+
+
+
+
+
+class Player{
+  constructor(index,instrument){
+    this.index = index;
+    this.instrument = instrument;
+    this.note = [];
+    this.node = new Map();
+  }
+  
+  
+  setIndex(index){
+    this.index = index;
+  }
+  getIndex(){
+      return this.index;
+  }
+  setInst(instrument){
+    this.instrument = instrument;
+  }
+  getInst(){
+    return this.instrument;
+  }
+  
+  setNode(key,node){
+    this.node.set(key,node);
+  }
+  getNode(key){
+    return this.node.get(key);
+  }
+  
+  
+  
+  pushNote(key){
+    if(!this.note.includes(key)){
+      this.note.push(key);
+    }
+    return;
+  }
+  getNote(){
+    return this.note;
+  }
+  deleteNote(key){
+    if(this.note.includes(key)){
+      this.note.splice(this.note.indexOf(key), 1);
+    }
+  }
+  
+}
+
+
+
