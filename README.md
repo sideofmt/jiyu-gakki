@@ -8,11 +8,11 @@
 
 3) package.jsonに従ってnpmからpackageをインストール:
 
-    `$ npm install`
+    $ npm install
 
 4) ターミナルからサーバーを起動:
 
-    `$ node server.js`
+    $ node server.js
 
 ## 参考
 
