@@ -1,7 +1,7 @@
 'use strict';
 
 var indexList = new Array(); // player's index
-const limitMax = 30;
+var limitMax = 20;
 
 
 class Player{
@@ -20,6 +20,7 @@ class Player{
     this.pan = pan;
     this.note = new Array();
     this.noteLimit = new Map();
+    this.base = 60;
     this.melody = null;
   }
   
@@ -75,6 +76,13 @@ class Player{
     notelimit.set(key,limit);
     return true;
   }
+  updateLimit2(key){
+    var notelimit = this.noteLimit;
+    var limit = notelimit.get(key);
+    limit--;
+    notelimit.set(key,limit);
+  }
+  
   limitZero(key){
     try{
       var limit = this.noteLimit.get(key);
@@ -93,6 +101,19 @@ class Player{
   static getIndexList(){
     return indexList;
   }
+  
+  static setLimitMax(limitmax){
+    limitMax = limitmax;
+  }
+  
+  
+  setBase(base){
+    this.base = base;
+  }
+  getBase(){
+    return this.base;
+  }
+  
   
   setMelody(melody){
     this.melody = melody;

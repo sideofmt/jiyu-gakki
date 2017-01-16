@@ -34,7 +34,7 @@ class Drum{
         // Audio data Bufferの生成
         var src = context.createBufferSource();
         var gainNode = context.createGain();
-        gainNode.gain.value = 0.3;
+        gainNode.gain.value = 0.2;
         
         
         try{

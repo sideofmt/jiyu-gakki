@@ -89,12 +89,12 @@ var TouchSynth = function(canvasname,io){
     var windowsize;
     
     
-    var instrumentList = ["piano","bass","flute","synth","string","drum"];
+    var instrumentList = ["piano","bass","flute","synth","strings","drum"];
     var instIndex = 0;
     var player_index = null;
     
-    var octaveList = [0,12,24,36,48,60,72,84,96,108];
-    var octaveIndex = 5;
+    var octaveList = [24,36,48,60,72,84]; // 21 < key < 108
+    var octaveIndex = 3;
     
     canvas_name = canvasname;
     
@@ -127,6 +127,11 @@ var TouchSynth = function(canvasname,io){
     function sendInstChange(instrument){
         socket.emit('instrument_change',instrument);
     }
+    
+    function sendOctaveChange(base){
+        socket.emit('octave_change',base);
+    }
+    
     
     socket.on('greeting', function(data){
         console.log("from server : "+data);
@@ -164,9 +169,7 @@ var TouchSynth = function(canvasname,io){
         
     });
     
-    socket.on('player_index', function(msg){
-        player_index = msg;
-    });
+
     
     
     function TouchInput()
@@ -420,6 +423,7 @@ var TouchSynth = function(canvasname,io){
                             octaveIndex++;
                             if(octaveIndex>=octaveList.length)octaveIndex -= octaveList.length;
                             baseKey = octaveList[octaveIndex];
+                            sendOctaveChange(baseKey);
                         }
                         ctx.fillStyle = "rgb(255,255,255)";
                         button[1] = false;
@@ -433,7 +437,7 @@ var TouchSynth = function(canvasname,io){
                     ctx.fillStyle = "rgb(255,255,255)";
                     ctx.fillText("オクターブ",width/12,height/2+5+100);
                     ctx.fillStyle = "rgb(0,0,0)";
-                    ctx.fillText(octaveIndex-5,width/12+100, height/2+100);
+                    ctx.fillText(octaveIndex-3,width/12+100, height/2+100);
                     
                     
                     

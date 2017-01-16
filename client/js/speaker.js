@@ -81,7 +81,7 @@ function load_Inst(){
     instruments.set('synth',inst);
   });
   Soundfont.instrument(context, './soundfont/string_ensemble_1-ogg.js').then(function (inst) {
-    instruments.set('string',inst);
+    instruments.set('strings',inst);
   });
   //Soundfont.instrument(context, './soundfont/synth_drum-ogg.js').then(function (inst) {
   //  instruments.set('drum',inst);
@@ -95,7 +95,6 @@ function load_Inst(){
 
 
 var socket = io.connect();
-
 
 
 function noteOn(id,key){
@@ -141,7 +140,7 @@ function scaleChange(base,scalename){
 
 function bpmChange(sbpm,score){
   socket.emit('bpm',[sbpm,score]);
-  console.log("sent bpm change : bpm"+sbpm+" "+score+"音符まで");
+  console.log("sent bpm change : bpm"+sbpm+" until "+score+" note");
 }
 
 
@@ -150,6 +149,7 @@ function bpmChange(sbpm,score){
 
 var indexList = new Array(); // player's index
 var img_inst = new Array(8);
+var img_map = new Map();
 var img_note;
 
 function loadImg(){
@@ -171,6 +171,26 @@ function loadImg(){
   img_inst[7].src = "img/gakki/keyboard8_white.png";
   img_note = new Image();
   img_note.src = "img/onpu/11_8bu_onpu.png";
+  
+  var img = new Image();
+  img.src = "img/gakki/drumset.png";
+  img_map.set("drum",img);
+  img = new Image();
+  img.src = "img/gakki/electone.png";
+  img_map.set("synth",img);
+  img = new Image();
+  img.src = "img/gakki/music_base.png";
+  img_map.set("bass",img);
+  img = new Image();
+  img.src = "img/gakki/music_flute.png";
+  img_map.set("flute",img);
+  img = new Image();
+  img.src = "img/gakki/music_piano.png";
+  img_map.set("piano",img);
+  img = new Image();
+  img.src = "img/gakki/music_violin.png";
+  img_map.set("strings",img);
+  
 }
 
 
@@ -186,34 +206,37 @@ var p_noteOnList = new Array();
 
 
 
+var width = 750;
+var height = 220;
+var canvas_name;
 
-
-function Draw(canvas_name){
+function Draw(canvas_n){
 
     var ctx;
+    canvas_name = canvas_n;
     
     var windowIndex; // 画面番号
     var settingButton; // setting画面表示フラグ
     
-    var width = 1000;
-    var height = 400;
+
     
     document.getElementById(canvas_name).width = width;
     document.getElementById(canvas_name).height = height;
     
+    /*
     function resize(){
         width = document.documentElement.clientWidth;
         height = document.documentElement.clientHeight;
     
-        document.getElementById(canvas_name).width = document.documentElement.clientWidth -100;
-        document.getElementById(canvas_name).height = document.documentElement.clientHeight -100;
+        //document.getElementById(canvas_name).width = document.documentElement.clientWidth -100;
+        //document.getElementById(canvas_name).height = document.documentElement.clientHeight -100;
         console.info("resize is called");
     }
     
     resize();
     
     window.onresize = resize;
-    
+    */
     
     var canvas = document.getElementById(canvas_name);
     if (canvas.getContext){
@@ -226,47 +249,181 @@ function Draw(canvas_name){
     }
       
     function draw(){
+
       
+      // background
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, width, height);
+      //ctx.globalCompositeOperation = "lighter";
       
-        // background
-        ctx.globalCompositeOperation = "source-over";
-        ctx.fillStyle = "#FFFFFF";
-        ctx.fillRect(0, 0, width, height);
-        //ctx.globalCompositeOperation = "lighter";
-      
-        for(var [key,player] of players){
+      var i=0;
+      for(var [key,player] of players){
+          
+          //console.log("player:"+player);
+          //console.log("player Index:"+player.getIndex());
+          
+          try{
+            var index = player.getIndex();
+            var x = 10;
+            var y = 10+210*i;
             
-            //console.log("player:"+player);
-            //console.log("player Index:"+player.getIndex());
             
-            try{
-              var index = player.getIndex();
-              var x = 10+index*210;
-              var y = 10;
-              
-              while(x+200>width){
-                x -= width;
-                y += 220;
-              }
-              
-              // 楽器
-              ctx.drawImage(img_inst[player.getIndex()],x,y);
-              ctx.textAlign = "left";
-              ctx.textBaseline = "top";
-              ctx.font = "normal normal 30px MSゴシック";
-              ctx.fillStyle = "rgb(0,0,0)";
-              ctx.fillText(index,100+x,y);
-              
-              var notes = player.getNote();
-              if(notes.length>0){
-                // 音符
-                ctx.drawImage(img_note,140+x,y);
-              }
-              
-            }catch(e){
-              console.error(e);
+            // 楽器
+            ctx.drawImage(img_map.get(player.getInst()),x,y,200,200);
+            
+            // インデックスの表示
+            ctx.textAlign = "left";
+            ctx.textBaseline = "top";
+            
+            ctx.font = "normal normal 30px MSゴシック";
+            ctx.fillStyle = "rgb(0,0,0)";
+            ctx.fillText(index,60+x,y);
+            
+            var notes = player.getNote();
+            if(notes.length>0){
+              // 音符
+              ctx.drawImage(img_note,140+x,y);
             }
-        }
+            
+            
+            // 鍵盤の描画の下準備
+            var pushKey = [[false,false,false,false,false,false,false,false,false,false,false,false],
+                          [false,false,false,false,false,false,false,false,false,false,false,false]];
+                          // [0,2,4,5,7,9,11,1,3,6,8,10]; 
+            var base = player.getBase();
+            for(var t=0; t<notes.length; t++){
+              var pushed = notes[t] - base;
+              var stage = 0;
+              if(pushed>11){
+                pushed -= 12;
+                stage = 1;
+              }
+              
+              switch(pushed){
+                case 0:
+                  pushed = 0;
+                  break;
+                case 1:
+                  pushed = 7;
+                  break;
+                case 2:
+                  pushed = 1;
+                  break;
+                case 3:
+                  pushed = 8;
+                  break;
+                case 4:
+                  pushed = 2;
+                  break;
+                case 5:
+                  pushed = 3;
+                  break;
+                case 6:
+                  pushed = 9;
+                  break;
+                case 7:
+                  pushed = 4;
+                  break;
+                case 8:
+                  pushed = 10;
+                  break;
+                case 9:
+                  pushed = 5;
+                  break;
+                case 10:
+                  pushed = 11;
+                  break;
+                case 11:
+                  pushed = 6;
+                  break;
+                default:
+                break;
+              }
+              pushKey[1-stage][pushed] = true;
+            }
+            
+            
+            
+            // オクターブの表示 24,36,48,60,72,84
+            var xstart = 270;
+            var ystart = 60+210*i;
+            
+            
+            y = 0;
+            switch(base){
+              case 24:
+                y = 100;
+                break;
+              case 36:
+                y = 80;
+                break;
+              case 48:
+                y = 60;
+                break;
+              case 60:
+                y = 40;
+                break;
+              case 72:
+                y = 20;
+                break;
+              //case 84:
+              //  y = 0;
+              //  break;
+              default:
+                break;
+            }
+            
+            ctx.fillStyle = "rgb(0,0,100)";
+            ctx.fillRect(xstart,ystart + y,20,20);
+            
+            
+            
+            
+            
+            xstart = 300;
+            //ystart = 60+210*i;
+
+            
+            // 鍵盤
+            for(var m=0; m<2; m++){
+              x = 0;
+              var count = 0;
+              for(var n=0; n<7; n++){
+                if(pushKey[m][count]){
+                  ctx.fillStyle = "rgb(255,0,0)";
+                  ctx.fillRect(xstart+x,ystart+60*m,40,60);
+                }
+                ctx.strokeStyle = "rgb(0,0,0)";
+                ctx.strokeRect(xstart+x,ystart+60*m,40,60);
+                x+=40;
+                count++;
+              }
+              x = 20;
+              for(n=0; n<5; n++){
+                if(pushKey[m][count]){
+                  ctx.fillStyle = "rgb(200,0,0)";
+                }else{
+                  ctx.fillStyle = "rgb(0,0,0)";
+                }
+                ctx.fillRect(xstart+x+10,ystart+60*m,20,40);
+                ctx.strokeStyle = "rgb(0,0,0)";
+                ctx.strokeRect(xstart+x+10,ystart+60*m,20,40);
+                
+                if(n==1)x+=80;
+                else x+=40;
+                
+                count++;
+              }
+              
+            }
+            
+            
+          }catch(e){
+            console.error(e);
+          }
+          i++;
+      }
       
       
       
@@ -310,7 +467,7 @@ selectbpm.onchange = function (){
   }else{
     score.disabled = false;
   }
-  scaleChange(sbpm.value,score.value);
+  bpmChange(sbpm.value,score.value);
 };
 
 
@@ -354,6 +511,7 @@ function init(){
   socket.on('greeting', function(data){
     console.log("from server : "+data);
     socket.emit('greeting', "speaker");
+    document.getElementById("socket_state").textContent="connect";
   });
   
   socket.on('update_data',function(ids){
@@ -389,16 +547,16 @@ function init(){
         players.delete(id);
       }
     });
+    
+    height = 10+210*idlist.length;
+    document.getElementById(canvas_name).height = height;
+    
   });
   
-  /*
-  socket.on('disconnected',function(id){
-    console.log("disconnected player ID:"+id);
-    var player = players.get(id);
-    player.remove();
-    players.delete(id);
+  
+  socket.on('disconnect',function(){
+    document.getElementById("socket_state").textContent="disconnect";
   });
-  */
 
   
   
@@ -411,7 +569,7 @@ function init(){
     var socketid = msg[0];
     var key = msg[1];
     
-    var player = players.get(socketid);
+    //var player = players.get(socketid);
     //player.setNote(key);
     noteOn(socketid, key);
   		
@@ -509,6 +667,8 @@ function init(){
     var nbpm = msg[0];
     var nscore = msg[1];
     
+    console.log("from server : "+nbpm+" bpm until "+nscore+" note");
+    
     var bpm = document.getElementById("bpm");
     var score = document.getElementById("score");
     
@@ -518,7 +678,7 @@ function init(){
         score.disabled = true;
         break;
       default:
-        bpm.selectedIndex = nbpm;
+        bpm.selectedIndex = nbpm-bpmMin+1;
         score.disabled = false;
         break;
     }
@@ -536,7 +696,7 @@ function init(){
       case 'eighth':
         score.selectedIndex = 3;
         break;
-      case 'Sixteenth':
+      case 'sixteenth':
         score.selectedIndex = 4;
         break;
       default:
@@ -556,6 +716,27 @@ function init(){
     
   });
   
+  socket.on('octave_change',function(msg){
+    var id = msg[0];
+    var base = msg[1];
+    
+    var player = players.get(id);
+    player.setBase(base);
+    
+  });
+  
+  
+  socket.on("clicker",function(msg){
+    
+    document.getElementById("clicker").style.color = "red";
+    setTimeout(function(){
+      document.getElementById("clicker").style.color = "black";
+    }, 100);
+    
+  });
+  
+  
+  
 }
 
 
@@ -568,6 +749,7 @@ class Player{
     this.instrument = instrument;
     this.note = [];
     this.node = new Map();
+    this.base = 60;
   }
   
   
@@ -589,6 +771,13 @@ class Player{
   }
   getNode(key){
     return this.node.get(key);
+  }
+  
+  setBase(base){
+    this.base = base;
+  }
+  getBase(){
+    return this.base;
   }
   
   

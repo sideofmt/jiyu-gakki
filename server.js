@@ -1,15 +1,14 @@
-//
-// # SimpleServer
-//
-// A simple chat server using Socket.IO, Express, and Async.
-//
+// ********************************
+// require
+// ********************************
+
 var http = require('http');
 var path = require('path');
 
 var socketio = require('socket.io');
 var express = require('express');
 
-// users import
+// user import
 var Melody = require('./src/melody.js');
 var Player = require('./src/player.js');
 
@@ -34,6 +33,12 @@ router.use(express.static(path.resolve(__dirname, 'client')));
 //io.set('heartbeat timeout',5000);
 //io.set('heartbeat interval',5000);
 
+
+
+// ********************************
+// define
+// ********************************
+
 var sockets = [];
 
 var nscale = ["none","none"];
@@ -46,62 +51,115 @@ var players = new Map(); // new Player();
 var notes = new Array(); // [id,key]
 var melodyArray = new Array(); // [isPlaying, Melody()]
 
-setInterval(update, 33);
+const default_interval = 33;
+var interval = 0;
+var interval_count = 0;
+var note_divide = 4;
+var note_divide_count = 0;
+
+var loopid = setInterval(update, default_interval);
+
+
+
+
+// ******************************
+// main loop
+// ******************************
+
 
 function update(){
   
-  for (var i=0; i<notes.length; i++){
+  
+  if(interval_count >= interval){
     
-    var note = notes[i];
-    var id = note[0];
-    var key = note[1];
-    var player = players.get(id);
-    if(player.pushNote(key)){
-      noteOn(id,key);
+    for (var i=0; i<notes.length; i++){
       
-      var m = player.getMelody();
-      if(m != null){
-        m.push(true,key);
+      var note = notes[i];
+      var id = note[0];
+      var key = note[1];
+      var player = players.get(id);
+      if(player.pushNote(key)){
+        noteOn(id,key);
+        
+        /*
+        var m = player.getMelody();
+        if(m != null){
+          m.push(true,key);
+        }
+        */
       }
+      
     }
     
-  }
-  
-  players.forEach(function(player,id){
-    var note = player.getNote();
-    var m = player.getMelody();
+    players.forEach(function(player,id){
+      var note = player.getNote();
+      //var m = player.getMelody();
+      
+      for(var i =0; i<note.length; i++){
+        var  key = note[i];
+        if(!player.updateLimit(key)){
+          noteOff(id,key);
+          
+          /*
+          if(m != null){
+            m.push(false,key);
+          }
+          */
+        }
+      }
+      /*
+      if(m != null){
+        m.timeCount();
+      }
+      */
+      
+    });
     
-    for(var i =0; i<note.length; i++){
-      var  key = note[i];
-      if(!player.updateLimit(key)){
-        noteOff(id,key);
-        
-        if(m != null){
-          m.push(false,key);
+    notes = new Array();
+    
+    // melody playing section
+    /*
+    for(var n=0; n<melodyArray.length; n++){
+      if(melodyArray[n][0]){
+        var mel = melodyArray[n][1];
+        var mkey = mel.pop();
+        var inst = mel.getInst();
+        if(mkey != ''){
+          broadcastSpeaker('melody_note',[inst,mkey]);
         }
       }
     }
-    if(m != null){
-      m.timeCount();
-    }
-    
-  });
-  
-  notes = new Array();
-  
-  // melody playing section
-  for(var n=0; n<melodyArray.length; n++){
-    if(melodyArray[n][0]){
-      var mel = melodyArray[n][1];
-      var mkey = mel.pop();
-      var inst = mel.getInst();
-      if(mkey != ''){
-        broadcastSpeaker('melody_note',[inst,mkey]);
+    */
+    if(nbpm[0] != "none"){
+      note_divide_count++;
+      if(note_divide_count>=note_divide){
+        note_divide_count = 0;
+        broadcastSpeaker("clicker","");
       }
     }
+    
+    interval_count = 0;
+  }else{
+    players.forEach(function(player,id){
+      var note = player.getNote();
+      
+      for(var i =0; i<note.length; i++){
+        var  key = note[i];
+        player.updateLimit2(key);
+      }
+      
+    });
   }
   
+  interval_count++;
+  
+  
 }
+
+
+// *************************************
+// user function
+// *************************************
 
 
 function noteOn(id,key){
@@ -124,7 +182,19 @@ function sendUpdateData(){
   broadcastSpeaker("update_data",playerids);
 }
 
+function sendOctaveData(socket){
+  players.forEach(function (player,key){
+    var base = player.getBase();
+    var id = key;
+    socket.emit('octave_change',[id,base]);
+  });
+}
 
+
+
+// ***********************************
+// socket
+// ***********************************
 
 
 io.sockets.on('connection', function (socket) {
@@ -147,8 +217,10 @@ io.sockets.on('connection', function (socket) {
           // [socket.id, index, inst]
         });
         socket.emit("update_data",playerids);
+        sendOctaveData(socket);
         
         socket.emit("sendScale",nscale);
+        socket.emit('sendBpm',nbpm);
         
         console.log("speaker added");
         break;
@@ -255,6 +327,15 @@ io.sockets.on('connection', function (socket) {
     }
   });
   
+  socket.on('octave_change',function(msg){
+    var base = msg;
+    if(player_sockets.indexOf(socket) != -1){
+      var player = players.get(socket.id);
+      player.setBase(base);
+      broadcastSpeaker('octave_change',[socket.id,base]);
+    }
+  });
+  
   
   socket.on('scale',function(msg){
     console.log("recieve changed scale : "+msg[0]+msg[1]);
@@ -264,10 +345,56 @@ io.sockets.on('connection', function (socket) {
   });
   
   socket.on('bpm',function(msg){
-    console.log("recieve changed : bpm"+msg[0]+" "+msg[1]+"音符");
+    console.log("recieve changed : bpm"+msg[0]+" until "+msg[1]+" note");
     nbpm = [msg[0],msg[1]];
-    broadcastSpeaker('sendBpm',msg);
+    
+    var divide = 1;
+    
+    switch(nbpm[1]){
+      case "whole":
+        divide = 1;
+        note_divide = 1;
+        break;
+      case "half":
+        divide = 2;
+        note_divide = 2;
+        break;
+      case "quarter":
+        divide = 4;
+        note_divide = 4;
+        break;
+      case "eighth":
+        divide = 8;
+        note_divide = 8;
+        break;
+      case "sixteenth":
+        divide = 16;
+        note_divide = 16;
+        break;
+      default:
+    }
+    
+    switch(nbpm[0]){
+      case "none":
+        interval = 0;
+        break;
+      default:
+        interval = Math.round( ( 60000/(nbpm[0]*(divide/4)) )/default_interval );
+        
+        console.log("interval is "+interval);
+        break;
+    }
+
+    
+    broadcastSpeaker('sendBpm',nbpm);
   });
+  
+  
+  
+  
+  
+  
+  
   
   socket.on('Rec',function(msg){
     
@@ -299,6 +426,8 @@ io.sockets.on('connection', function (socket) {
     }
   });
   
+  
+  
   socket.on('play_melody',function(msg){
     var index = msg[0];
     var msg = msg[1]; // true is start, false is stop
@@ -312,7 +441,14 @@ io.sockets.on('connection', function (socket) {
   
     
 });
-  
+
+
+
+
+// ********************************
+// broadcast function
+// ********************************
+
 function broadcastPlayer(event, data) {
   player_sockets.forEach(function (socket) {
     socket.emit(event, data);
@@ -325,6 +461,11 @@ function broadcastSpeaker(event, data) {
   });
 }
 
+
+
+// **********************************
+// server listen
+// **********************************
 
 server.listen(process.env.PORT || 3000, process.env.IP || "0.0.0.0", function(){
   var addr = server.address();

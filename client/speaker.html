@@ -42,73 +42,102 @@
     </nav>
     
     
+    
+
+    
+    
+    
+    
     <div class="container">
       <div class="page-header">
-        <h1>test <small>test</small></h1>
+        <h1>test <small id="socket_state">discconect</small></h1>
         </div>
         
-        <div class="container">
         
-          <div id="qrcode"></div>
-          <br>
         
-        </div>
-  
-        <div class="container">
-          <div class="panel panel-default">
-            <div class="panel-heading">
-              <h3 class="panel-title">スケール</h3>
-            </div>
-            <div class="panel-body form-inline">
-              <form id="scale" name="scale">
-                <select id="base" class="form-control" placeholder=".col-xs-2">
-                  <option value="none">なし</option>
-                  <option value="C">C</option>
-                  <option value="C#">C#</option>
-                  <option value="D">D</option>
-                  <option value="D#">D#</option>
-                  <option value="E">E</option>
-                  <option value="F">F</option>
-                  <option value="F#">F#</option>
-                  <option value="G">G</option>
-                  <option value="G#">G#</option>
-                  <option value="A">A</option>
-                  <option value="A#">A#</option>
-                  <option value="B">B</option>
-                </select>
-                <select id="scalename" class="form-control" placeholder=".col-xs-2" disabled="true">
-                  <option value="major">メジャー</option>
-                  <option value="minor">マイナー</option>
-                </select>
-                スケール
-              </form>
-            </div>
-          </div>
-
-          <div class="panel panel-default">
-            <div class="panel-heading">
-              <h3 class="panel-title">リズム</h3>
-            </div>
-            <div class="panel-body form-inline">
-              <form id="rythm" name="rythm">
-                <select id="bpm" class="form-control" placeholder=".col-xs-2">
-                  <option value="none">指定しない</option>
-                </select>
-                BPM
-                &nbsp;&nbsp;&nbsp;&nbsp;
-                <select id="score" class="form-control" placeholder=".col-xs-2">
-                  <option value="whole">全</option>
-                  <option value="half">2分</option>
-                  <option value="quarter">4分</option>
-                  <option value="eighth">8分</option>
-                  <option value="Sixteenth">16分</option>
-                </select>
-                音符まで
-              </form>
-            </div>
-          </div>
-
-          
+                <div class="container">
+                  <div class="panel panel-default" role="tab">
+                    <div class="panel-heading">
+                      <h3 class="panel-title">
+                        <a data-toggle="collapse" data-parent="#accordion" href="#one" aria-expanded="true" aria-controls="one" role="button">
+                        QRコード
+                        </a>
+                      </h3>
+                    </div>
+                    <div id="one" class="panel-collapse collapse" aria-labelledby="one" role="tabpanel">
+                      <div class="panel-body">
+                        <div id="qrcode"></div>
+                      </div>
+                    </div>
+                  </div>
+                          
+                  
+                  
+                  
+                  <div class="panel panel-default" role="tab">
+                    <div class="panel-heading">
+                      <h3 class="panel-title">
+                        <a data-toggle="collapse" data-parent="#accordion" href="#two" aria-expanded="true" aria-controls="two" role="button">
+                        スケール
+                        </a>
+                      </h3>
+                    </div>
+                    <div id="two" class="panel-collapse collapse" aria-labelledby="two" role="tabpanel">
+                      <div class="panel-body form-inline">
+                        <form id="scale" name="scale">
+                          <select id="base" class="form-control" placeholder=".col-xs-2">
+                            <option value="none">なし</option>
+                            <option value="C">C</option>
+                            <option value="C#">C#</option>
+                            <option value="D">D</option>
+                            <option value="D#">D#</option>
+                            <option value="E">E</option>
+                            <option value="F">F</option>
+                            <option value="F#">F#</option>
+                            <option value="G">G</option>
+                            <option value="G#">G#</option>
+                            <option value="A">A</option>
+                            <option value="A#">A#</option>
+                            <option value="B">B</option>
+                          </select>
+                          <select id="scalename" class="form-control" placeholder=".col-xs-2" disabled="true">
+                            <option value="major">メジャー</option>
+                            <option value="minor">マイナー</option>
+                          </select>
+                          スケール
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+        
+                  <div class="panel panel-default" role="tab">
+                    <div class="panel-heading">
+                      <h3 class="panel-title">
+                        <a data-toggle="collapse" data-parent="#accordion" href="#three" aria-expanded="true" aria-controls="three" role="button">
+                        リズム <span id="clicker">●</span>
+                        </a>
+                      </h3>
+                    </div>
+                    <div id="three" class="panel-collapse collapse" aria-labelledby="three" role="tabpanel">
+                      <div class="panel-body form-inline">
+                        <form id="rythm" name="rythm">
+                          <select id="bpm" class="form-control" placeholder=".col-xs-2">
+                            <option value="none">なし</option>
+                          </select>
+                          BPM
+                          &nbsp;&nbsp;&nbsp;&nbsp;
+                          <select id="score" class="form-control" placeholder=".col-xs-2" disabled="true">
+                            <option value="whole">全</option>
+                            <option value="half">2分</option>
+                            <option value="quarter">4分</option>
+                            <option value="eighth">8分</option>
+                            <option value="sixteenth">16分</option>
+                          </select>
+                          音符まで
+                        </form>
+                      </div>
+                    </div>
+                  </div>
           
             <div class="row">
   
