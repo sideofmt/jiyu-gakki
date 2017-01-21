@@ -105,12 +105,14 @@ var TouchSynth = function(canvasname,io){
     }
     
     function sendNoteOn(key){
-        socket.emit('noteOn',key);
+        var time = Test.start();
+        socket.emit('noteOn',[key,time]);
     }
     
     function sendNoteOff(key){
-        socket.emit('noteOff',key);
-        console.log("send noteOff");
+        var time = Test.start();
+        socket.emit('noteOff',[key,time]);
+        //console.log("send noteOff");
     }
     
     function sendInstChange(instrument){
@@ -156,6 +158,19 @@ var TouchSynth = function(canvasname,io){
        console.log("player_index : "+player_index);
        player_index = msg;
         
+    });
+    
+    
+    socket.on('note_back',function(msg){
+        var time = msg[0];
+        var sid = msg[1];
+        var note = msg[2];
+        
+        var ntime = Test.stop(time);
+        
+        if(time!=null){
+            socket.emit('write_log',[ntime,sid,note]);
+        }
     });
     
 
@@ -467,8 +482,9 @@ var TouchSynth = function(canvasname,io){
                                         ctx.fillStyle = "rgb(255,100,100)";
                                         ctx.strokeStyle = "rgb(200,200,200)";
                                     }
-
+                                    
                                     sendNoteOn(key);
+                                    
                                     keyPushed[y][x] = true;
                                 }else{
                                     if(x==1||x==3||x==6||x==8||x==10){  // 黒鍵であるかどうか

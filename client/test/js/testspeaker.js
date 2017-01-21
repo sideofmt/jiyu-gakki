@@ -68,19 +68,19 @@ master.connect(context.destination);
 var instruments = new Map();
 
 function load_Inst(){
-  Soundfont.instrument(context, './soundfont/acoustic_grand_piano-ogg.js').then(function (inst) {
+  Soundfont.instrument(context, '../soundfont/acoustic_grand_piano-ogg.js').then(function (inst) {
     instruments.set('piano',inst);
   });
-  Soundfont.instrument(context, './soundfont/synth_bass_1-ogg.js').then(function (inst) {
+  Soundfont.instrument(context, '../soundfont/synth_bass_1-ogg.js').then(function (inst) {
     instruments.set('bass',inst);
   });
-  Soundfont.instrument(context, './soundfont/flute-ogg.js').then(function (inst) {
+  Soundfont.instrument(context, '../soundfont/flute-ogg.js').then(function (inst) {
     instruments.set('flute',inst);
   });
-  Soundfont.instrument(context, './soundfont/pad_3_polysynth-ogg.js').then(function (inst) {
+  Soundfont.instrument(context, '../soundfont/pad_3_polysynth-ogg.js').then(function (inst) {
     instruments.set('synth',inst);
   });
-  Soundfont.instrument(context, './soundfont/string_ensemble_1-ogg.js').then(function (inst) {
+  Soundfont.instrument(context, '../soundfont/string_ensemble_1-ogg.js').then(function (inst) {
     instruments.set('strings',inst);
   });
   //Soundfont.instrument(context, './soundfont/synth_drum-ogg.js').then(function (inst) {
@@ -154,41 +154,41 @@ var img_note;
 
 function loadImg(){
   img_inst[0] = new Image();
-  img_inst[0].src = "img/gakki/keyboard1_red.png";
+  img_inst[0].src = "../img/gakki/keyboard1_red.png";
   img_inst[1] = new Image();
-  img_inst[1].src = "img/gakki/keyboard2_blue.png";
+  img_inst[1].src = "../img/gakki/keyboard2_blue.png";
   img_inst[2] = new Image();
-  img_inst[2].src = "img/gakki/keyboard3_yellow.png";
+  img_inst[2].src = "../img/gakki/keyboard3_yellow.png";
   img_inst[3] = new Image();
-  img_inst[3].src = "img/gakki/keyboard4_green.png";
+  img_inst[3].src = "../img/gakki/keyboard4_green.png";
   img_inst[4] = new Image();
-  img_inst[4].src = "img/gakki/keyboard5_orange.png";
+  img_inst[4].src = "../img/gakki/keyboard5_orange.png";
   img_inst[5] = new Image();
-  img_inst[5].src = "img/gakki/keyboard6_purple.png";
+  img_inst[5].src = "../img/gakki/keyboard6_purple.png";
   img_inst[6] = new Image();
-  img_inst[6].src = "img/gakki/keyboard7_black.png";
+  img_inst[6].src = "../img/gakki/keyboard7_black.png";
   img_inst[7] = new Image();
-  img_inst[7].src = "img/gakki/keyboard8_white.png";
+  img_inst[7].src = "../img/gakki/keyboard8_white.png";
   img_note = new Image();
-  img_note.src = "img/onpu/11_8bu_onpu.png";
+  img_note.src = "../img/onpu/11_8bu_onpu.png";
   
   var img = new Image();
-  img.src = "img/gakki/drumset.png";
+  img.src = "../img/gakki/drumset.png";
   img_map.set("drum",img);
   img = new Image();
-  img.src = "img/gakki/electone.png";
+  img.src = "../img/gakki/electone.png";
   img_map.set("synth",img);
   img = new Image();
-  img.src = "img/gakki/music_base.png";
+  img.src = "../img/gakki/music_base.png";
   img_map.set("bass",img);
   img = new Image();
-  img.src = "img/gakki/music_flute.png";
+  img.src = "../img/gakki/music_flute.png";
   img_map.set("flute",img);
   img = new Image();
-  img.src = "img/gakki/music_piano.png";
+  img.src = "../img/gakki/music_piano.png";
   img_map.set("piano",img);
   img = new Image();
-  img.src = "img/gakki/music_violin.png";
+  img.src = "../img/gakki/music_violin.png";
   img_map.set("strings",img);
   
 }
@@ -292,60 +292,57 @@ function Draw(canvas_n){
                           [false,false,false,false,false,false,false,false,false,false,false,false]];
                           // [0,2,4,5,7,9,11,1,3,6,8,10]; 
             var base = player.getBase();
-            var inst = player.getInst();
-            
-            if(inst!="drum"){
-              for(var t=0; t<notes.length; t++){
-                var pushed = notes[t] - base;
-                var stage = 0;
-                if(pushed>11){
-                  pushed -= 12;
-                  stage = 1;
-                }
-                
-                switch(pushed){
-                  case 0:
-                    pushed = 0;
-                    break;
-                  case 1:
-                    pushed = 7;
-                    break;
-                  case 2:
-                    pushed = 1;
-                    break;
-                  case 3:
-                    pushed = 8;
-                    break;
-                  case 4:
-                    pushed = 2;
-                    break;
-                  case 5:
-                    pushed = 3;
-                    break;
-                  case 6:
-                    pushed = 9;
-                    break;
-                  case 7:
-                    pushed = 4;
-                    break;
-                  case 8:
-                    pushed = 10;
-                    break;
-                  case 9:
-                    pushed = 5;
-                    break;
-                  case 10:
-                    pushed = 11;
-                    break;
-                  case 11:
-                    pushed = 6;
-                    break;
-                  default:
-                  break;
-                }
-                pushKey[1-stage][pushed] = true;
+            for(var t=0; t<notes.length; t++){
+              var pushed = notes[t] - base;
+              var stage = 0;
+              if(pushed>11){
+                pushed -= 12;
+                stage = 1;
               }
+              
+              switch(pushed){
+                case 0:
+                  pushed = 0;
+                  break;
+                case 1:
+                  pushed = 7;
+                  break;
+                case 2:
+                  pushed = 1;
+                  break;
+                case 3:
+                  pushed = 8;
+                  break;
+                case 4:
+                  pushed = 2;
+                  break;
+                case 5:
+                  pushed = 3;
+                  break;
+                case 6:
+                  pushed = 9;
+                  break;
+                case 7:
+                  pushed = 4;
+                  break;
+                case 8:
+                  pushed = 10;
+                  break;
+                case 9:
+                  pushed = 5;
+                  break;
+                case 10:
+                  pushed = 11;
+                  break;
+                case 11:
+                  pushed = 6;
+                  break;
+                default:
+                break;
+              }
+              pushKey[1-stage][pushed] = true;
             }
+            
             
             
             // オクターブの表示 24,36,48,60,72,84
@@ -571,10 +568,13 @@ function init(){
     
     var socketid = msg[0];
     var key = msg[1];
+    var time = msg[2];
     
     //var player = players.get(socketid);
     //player.setNote(key);
     noteOn(socketid, key);
+  	
+  	socket.emit('note_back',[socketid,time,"noteOn"]);
   		
   });
   
@@ -583,8 +583,11 @@ function init(){
     
     var socketid= msg[0];
     var key = msg[1];
+    var time = msg[2];
     
     noteOff(socketid,key);
+    
+    socket.emit('note_back',[socketid,time,"noteOff"]);
   });
   
   
